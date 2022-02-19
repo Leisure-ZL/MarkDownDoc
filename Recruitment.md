@@ -131,11 +131,9 @@
 
 用户态切换到内核态的**3**种方式 
 
-1) **系统调用**：这是用户态进程主动要求切换到内核态的一种方式，用户态进程通过系统调用申请使用操作系统提供的服务程序完成工作。而系统调用的机制其核心还是使用了操作系统为用户特别开放的一个中断来实现，例如Linux的int 80h中断。 
-
-2) **异常**：当CPU在执行运行在用户态下的程序时，发生了某些事先不可知的异常，这时会触发由当前运行进程切换到处理此异常的内核相关程序中，也就转到了内核态，比如缺页异常。 
-
-3) **外围设备的中断**：当外围设备完成用户请求的操作后，会向CPU发出相应的中断信号，这时CPU会暂停执行下一条即将要执行的指令转而去执行与中断信号对应的处理程序，如果先前执行的指令是用户态下的程序，那么这个转换的过程自然也就发生了由用户态到内核态的切换。比如硬盘读写操作完成，系统会切换到硬盘读写的中断处理程序中执行后续操作等。 
+1. 系统调用：内核提供的一组通用的访问接口。其实系统调用本身就是中断，但是软件中断，跟硬中断不同。
+2. 异常：如果当前进程运行在用户态，如果这个时候发生了异常事件，就会触发切换。例如：缺页异常。
+3. 外设中断：当外设完成用户的请求时，会向CPU发送中断信号。
 
 
 
@@ -151,13 +149,13 @@
 
 死锁产生的必要条件： 
 
-- **互斥条件**:进程对所分配的资源进行排他性的使用  
+- **互斥条件：**一个资源每次只能被一个进程使用。
 
-- **请求和保持条件**：进程被阻塞的时候并不释放锁申请到的资源 
+- **请求和保持条件：**一个进程因请求资源而阻塞时，对已获得的资源保持不放。
 
-- **不可剥夺条件**：进程对于已经申请到的资源在使用完成之前不可以被剥夺 
+- **不可剥夺条件：**进程已获得的资源，在末使用完之前，不能强行剥夺。
 
-- **循环等待条件**：发生死锁的时候存在的一个 进程-资源 环形等待链  
+- **循环等待条件：**若干进程之间形成一种头尾相接的循环等待资源关系。
 
 死锁处理： 
 
@@ -165,7 +163,7 @@
 
 **避免死锁**：在资源的动态分配中，防止系统进入不安全状态(可能产生死锁的状态)-如银行家算法 
 
-**检测死锁**：允许系统运行过程中产生死锁，在死锁发生之后，采用一定的算法进行 检测，并确定与死锁相关的资源和进程，采取相关方法清除检测到的死锁。实现难度大
+**检测死锁**：允许系统运行过程中产生死锁，在死锁发生之后，采用一定的算法进行检测，并确定与死锁相关的资源和进程，采取相关方法清除检测到的死锁。实现难度大
 
 **解除死锁**：与死锁检测配合，将系统从死锁中解脱出来（撤销进程或者剥夺资源）。对检测到的和死锁相关的进程以及资源，通过撤销或者挂起的方式，释放一些资源并将其分配给处于阻塞状态的进程，使其转变为就绪态。实现难度大 
 
@@ -177,11 +175,29 @@
 
 **短作业优先调度算法（SJF）**： 作业调度算法，算法从就绪队列中选择估计时间最短的作业进行处理，直到得出结果或者无法继续执行；缺点：不利于长作业；未考虑作 业的重要性；运行时间是预估的，并不靠谱 ； 
 
-**高响应比算法（HRN）**： 响应比=(等待时间+要求服务时间)/要求服务时间； 
+**优先级调度算法**： 优先级调度算法每次从就绪队列中选择优先级最高的进程，将处理机分配给它，使之投入运行。
+
+**高响应比优先调度算法：**高响应比优先调度算法主要用于作业调度，该算法是对FCFS调度算法和SJF调度算法的一种综合平衡，同时考虑每个作业的等待时间和估计的运行时间。在每次进行作业调度时，先计算后备作业队列中每个作业的响应比，从中选出响应比最高的作业投入运行。响应比=（等待时间+要求服务时间）/要求服务时间；
+
+- 当作业的等待时间相同时，则要求服务时间越短，其响应比越高，有利于短作业。
+- 当要求服务时间相同时，作业的响应比由其等待时间决定，等待时间越长，其响应比越高，因而它实现的是先来先服务。
+- 对于长作业，作业的响应比可以随等待时间的增加而提高，当其等待时间足够长时，其响应比便可升到很高，从而也可获得处理机。克服了饥饿状态，兼顾了长作业。
 
 **时间片轮转调度（RR）**： 按到达的先后对进程放入队列中，然后给队首进程分配CPU时间片，时间片用完之后计时器发出中断，暂停当前进程并将其放到队列尾部，循环 ; 
 
-**多级反馈队列调度算法**： 目前公认较好的调度算法；设置多个就绪队列并为每个队列设置不同的优先级，第一个队列优先级最高，其余依次递减。优先级越高的队列分配的时间片越短，进程到达之后按FCFS放入第一个队列，如果调度执行后没有完成，那么放到第二个队列尾部等待调度，如果第二次调度仍然没有完成，放入第三队列尾部……只有当前一个队列为空的时候才会去调度下一个队列的进程。
+**多级反馈队列调度算法**： 
+
+设置多个就绪队列，并为各个队列赋予不同的优先级。在优先权越高的队列中，为每个进程所规定的执行时间片就越小。
+
+一个新进程进入内存后，首先放入第一队列的末尾，按照先来先去原则排队等候调度。如果他能在一个时间片中完成，便可撤离；如果未完成，就转入第二队列的末尾，同样等待调度.....如此下去，当一个长作业（进程）从第一队列依次将到第n队列（最后队列）后，便按第n队列时间片轮转运行。
+
+仅当第一队列空闲的时候，调度程序才调度第二队列中的进程运行；仅当第1到（i-1）队列空时，才会调度第i队列中的进程运行，并执行相应的时间片轮转。
+
+如果处理机正在处理第i队列中某进程，又有新进程进入优先权较高的队列，则此新队列抢占正在运行的处理机，并把正在运行的进程放在第i队列的队尾。
+
+
+
+![71f5188f353e7cfac03dc806ba547a0b.gif](D:\Typora\img\71f5188f353e7cfac03dc806ba547a0b.gif)
 
 
 
@@ -189,11 +205,17 @@
 
 主要是指动态分区分配时所采用的几种算法。 动态分区分配又称为可变分区分配，是一种动态划分内存的分区方法。这种分区方法不预先将内存划分，而是在进程装入内存时，根据进程的大小动态地建立分区，并使分区的大小正好适合进程的需要。因此系统中分区的大小和数目是可变的。 
 
-**首次适应(First Fit)算法**： 空闲分区以地址递增的次序链接。分配内存时顺序查找，找到大小能满足要求的第一个空闲分区。 
+**首次适应(First Fit)算法**： 空闲分区以地址递增的次序链接。分配内存时顺序查找，找到大小能满足要求的第一个空闲分区。 每次都是优先利用低址部分的空闲分区，造成低址部分产生大量的外部碎片。
 
-**最佳适应(Best Fit)算法**： 空闲分区按容量递增形成分区链，找到第一个能满足要求的空闲分区。 
+**最佳适应(Best Fit)算法**： 空闲分区按容量递增形成分区链，找到第一个能满足要求的空闲分区。 产生大量难以利用的外部碎片。
 
-**最坏适应(Worst Fit)算法**： 又称最大适应(Largest Fit)算法，空闲分区以容量递减的次序链接。找到第一个能满足要求的空闲分区，也就是挑选出最大的分区。 
+**最坏适应(Worst Fit)算法**： 又称最大适应(Largest Fit)算法，空闲分区以容量递减的次序链接。找到第一个能满足要求的空闲分区，也就是挑选出最大的分区。 当小作业把大空闲分区分小了，那么，大作业就找不到合适的空闲分区。
+
+外部碎片：指的是还没有被分配出去（不属于任何进程），但由于太小了无法分配给申请内存空间的新进程的内存空闲区域。
+
+内部碎片：是处于**（操作系统分配的用于装载某一进程的内存）区域内部**或页面内部**的存储块**。占有这些区域或页面的进程并不使用这个存储块。而在进程占有这块存储块时，系统无法利用它。直到进程释放它，或进程结束时，系统才有可能利用这个存储块。比如有6间仓库目前都是空置的，但是假设我们管理仓库的最小空间单位是间，今天运来了容量为2.5间仓库的货物，那也要占用我们1-3号3间仓库，尽管3号仓库还闲置着一半的空间，但是这半间仓库已经不能再利用了（因为是以间为最小单位么）；这时，我们的仓库中就形成了半间仓库的空间碎片，仓库的有效容量只剩下3间仓库了。
+
+
 
 
 
@@ -1024,6 +1046,87 @@ Proxy类接收一个IBinder参数，这个参数实际上就是服务端Service�
 
 
 
+##### 外观模式
+
+有些人可能炒过股票，但其实大部分人都不太懂，这种没有足够了解证券知识的情况下做股票是很容易亏钱的，刚开始炒股肯定都会想，如果有个懂行的帮帮手就好，其实基金就是个好帮手，支付宝里就有许多的基金，它将投资者分散的资金集中起来，交由专业的经理人进行管理，投资于股票、债券、外汇等领域，而基金投资的收益归持有者所有，管理机构收取一定比例的托管管理费用。
+
+由于当投资者自己买股票时，由于众多投资者对众多股票的联系太多，反而不利于操作，这在软件中就成为耦合性太高，而有了基金后，就变成众多用户只和基金打交道，关心基金的上涨和下跌，而实际上的操作确是基金经理人与股票和其它投资产品打交道，这就是外观模式。
+
+**外观模式（Facade）**，为子系统中的一组接口提供一个一致的界面，此模式定义了一个高层接口，这个接口使得这一子系统更加容易使用。
+
+> 实例：假设一台电脑，它包含了 CPU（处理器），Memory（内存） ，Disk（硬盘）这几个部件，若想要启动电脑，则先后必须启动 CPU、Memory、Disk。关闭也是如此。
+>
+> 但是实际上我们在电脑开/关机时根本不需要去操作这些组件，因为电脑已经帮我们都处理好了，并隐藏了这些东西。
+>
+> 这些组件好比子系统角色，而电脑就是一个外观角色。
+
+实现：
+
+```java
+//SubSystem 子系统角色
+public class CPU {   
+    public void startup(){  
+        System.out.println("cpu startup!");  
+    }  
+    public void shutdown(){  
+        System.out.println("cpu shutdown!");  
+    }  
+}
+ 
+public class Memory {    
+    public void startup(){  
+        System.out.println("memory startup!");  
+    }  
+    public void shutdown(){  
+        System.out.println("memory shutdown!");  
+    }  
+} 
+ 
+public class Disk {  
+    public void startup(){  
+        System.out.println("disk startup!");  
+    }  
+    public void shutdown(){  
+        System.out.println("disk shutdown!");  
+    }  
+}
+```
+
+```java
+//Facade 外观角色
+public class Computer {  
+    private CPU cpu;  
+    private Memory memory;  
+    private Disk disk;  
+ 
+    public Computer(){  
+        cpu = new CPU();  
+        memory = new Memory();  
+        disk = new Disk();  
+    }  
+ 
+    public void startup(){  
+        System.out.println("start the computer!");  
+        cpu.startup();  
+        memory.startup();  
+        disk.startup();  
+        System.out.println("start computer finished!");  
+    }  
+ 
+    public void shutdown(){  
+        System.out.println("begin to close the computer!");  
+        cpu.shutdown();  
+        memory.shutdown();  
+        disk.shutdown();  
+        System.out.println("computer closed!");  
+    }  
+}
+```
+
+
+
+
+
 > 行为型模式
 
 ##### 命令模式
@@ -1808,9 +1911,9 @@ public class DynamicProxyDemo {
 
 **语法糖** 
 
-语法糖（Syntactic Sugar），也称糖衣语法，是由英国计算机学家Peter.J.Landin发 明的一个术语，指在计算机语言中添加的某种语法，这种语法对语言的功能并没有 影响，但是更方便程序员使用。Java中最常用的语法糖主要有泛型、变长参数、条 件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被 还原回了简单的基础语法结构，这个过程成为解语法糖。
+语法糖（Syntactic Sugar），也称糖衣语法，是由英国计算机学家Peter.J.Landin发 明的一个术语，**指在计算机语言中添加的某种语法，这种语法对语言的功能并没有影响，但是更方便程序员使用**。Java中最常用的语法糖主要有泛型、变长参数、条件编译、自动拆装箱、内部类等。虚拟机并不支持这些语法，它们在编译阶段就被 还原回了简单的基础语法结构，这个过程成为解语法糖。
 
-**泛型的目的：** Java 泛型就是把一种语法糖，通过泛型使得在编译阶段完成一些类 型转换的工作，避免在运行时强制类型转换而出现 ClassCastException ，即类型转换异常。
+**泛型的目的：** Java 泛型就是把一种语法糖，通过泛型使得在编译阶段完成一些类型转换的工作，避免在运行时强制类型转换而出现 ClassCastException ，即类型转换异常。
 
 **泛型的好处 ：**
 
@@ -1931,7 +2034,7 @@ Java异常机制用到的几个关键字：**try**、**catch**、**finally**、*
 
 #### 2.8 Java抽象类和接口的区别
 
-接口和抽象类的概念不一样。接口是对动作的抽象，抽象类是对根源的抽象。从设 计理念上，接口反映的是 **“like-a”** 关系，抽象类反映的是 **“is-a”** 关系。 抽象类表示的是，这个对象是什么。接口表示的是，这个对象能做什么。比如，男人，女人，这两个类，他们的抽象类是人。说明，他们都是人。 人可以吃东西，狗也可以吃东西，你可以把“吃东西”定义成一个接口，然后让这些类去实现它. 所以，在高级语言上，一个类只能继承一个类（抽象类）(正如人不可能 同时是生物和非生物)，但是可以实现多个接口(吃饭接口、走路接口)。
+接口和抽象类的概念不一样。接口是对动作的抽象，抽象类是对根源的抽象。从设计理念上，接口反映的是 **“like-a”** 关系，抽象类反映的是 **“is-a”** 关系。 抽象类表示的是，这个对象是什么。接口表示的是，这个对象能做什么。比如，男人，女人，这两个类，他们的抽象类是人。说明，他们都是人。 人可以吃东西，狗也可以吃东西，你可以把“吃东西”定义成一个接口，然后让这些类去实现它. 所以，在高级语言上，一个类只能继承一个类（抽象类）(正如人不可能 同时是生物和非生物)，但是可以实现多个接口(吃饭接口、走路接口)。
 
 1. 抽象类和接口都不能直接实例化，如果要实例化，抽象类变量必须指向实现所有抽象方法的子类对象，接口变量必须指向实现所有接口方法的类对象。 
 
@@ -1953,11 +2056,11 @@ Java异常机制用到的几个关键字：**try**、**catch**、**finally**、*
 
 **浅拷贝** 
 
-浅拷贝是按位拷贝对象，它会创建一个新对象，这个对象有着原始对象属性值的一份精确拷贝。如果属性是基本类型，拷贝的就是基本类型的值；如果属性是内存地 址（引用类型），拷贝的就是内存地址 ，因此如果其中一个对象改变了这个地址，就会影响到另一个对象。
+浅拷贝是按位拷贝对象，它会创建一个新对象，这个对象有着原始对象属性值的一份精确拷贝。如果属性是基本类型，拷贝的就是基本类型的值；如果属性是内存地址（引用类型），拷贝的就是内存地址 ，因此如果其中一个对象改变了这个地址，就会影响到另一个对象。
 
 ![image-20220116163244409](D:\Typora\img\image-20220116163244409.png) 
 
-在上图中，SourceObject有一个int类型的属性 "field1"和一个引用类型属 性"refObj"（引用ContainedObject类型的对象）。当对SourceObject做浅拷贝时， 创建了CopiedObject，它有一个包含"field1"拷贝值的属性"field2"以及仍指向refObj 本身的引用。由于"field1"是基本类型，所以只是将它的值拷贝给"field2"，但是由 于"refObj"是一个引用类型, 所以CopiedObject指向"refObj"相同的地址。因此对SourceObject中的"refObj"所做的任何改变都会影响到CopiedObject。
+在上图中，SourceObject有一个int类型的属性 "field1"和一个引用类型属 性"refObj"（引用ContainedObject类型的对象）。当对SourceObject做浅拷贝时， 创建了CopiedObject，它有一个包含"field1"拷贝值的属性"field2"以及仍指向refObj 本身的引用。由于"field1"是基本类型，所以只是将它的值拷贝给"field2"，但是由 于"refObj"是一个引用类型, 所以CopiedObject指向"refObj"相同的地址。**因此对SourceObject中的"refObj"所做的任何改变都会影响到CopiedObject。**
 
 
 
@@ -2082,7 +2185,7 @@ public class Example {
 输出：good and gbc
 ```
 
-在java里没有引用传递，只有值传递这个值指的是实参的地址的拷贝，得到这个拷贝地址后，你可以通过它修改这个地址的内容（引用不变），因为此时这个内容的地址和原地址是同一地址，但是你**不能改变这个地址本身使其重新引用其它的对象**，也就是值传递，
+在java里没有引用传递，只有值传递这个值指的是实参的地址的拷贝，得到这个拷贝地址后，你可以通过它**修改这个地址的内容**（引用不变），因为此时这个内容的地址和原地址是同一地址，但是你**不能改变这个地址本身使其重新引用其它的对象**，也就是值传递，
 
 **不管是引用数据类型还是基本类型，在函数中都不能改变其实际地址但能改变其中的内容。**
 
@@ -2177,7 +2280,7 @@ public class Main {
 
 采用实现**Runnable**、**Callable**接口的方式创见多线程时，优势是： 
 
-线程类只是实现了Runnable接口或Callable接口，还可以继承其他类。 在这种方式下，多个线程可以共享同一个target对象，所以非常适合多个相同线程来处理同一份资源的情况，从而可以将CPU、代码和数据分开，形成清晰的模型，较好地体现了面向对象的思想。 
+线程类只是实现了Runnable接口或Callable接口，还可以继承其他类。 在这种方式下，**多个线程可以共享同一个target对象，所以非常适合多个相同线程来处理同一份资源的情况**，从而可以将CPU、代码和数据分开，形成清晰的模型，较好地体现了面向对象的思想。 
 
 劣势是： 
 
@@ -2299,7 +2402,7 @@ shutdownNow原理：将线程池的状态设置成STOP状态，然后中断所�
 
 
 
-#### 2.15 死锁
+#### 2.15 Java死锁
 
 **死锁条件**
 
@@ -2697,8 +2800,6 @@ JDK中选用LinkedBlockingQueue作为阻塞队列的原因就在于其无界性�
 
 
 
-
-
 #### 2.21 ConcurrentHashMap
 
 **Hashtable线程安全但效率低下**
@@ -2838,15 +2939,11 @@ Java堆是被所有线程共享的一块内存区域，所有对象和数组都�
 
 ![img](D:\Typora\img\20200524163240284.png)
 
-
-
 JDK1.8以前Java虚拟机将堆内存划分为新生代、老年代和永久代，永久代是HotSpot虚拟机特有的概念（JDK1.8之后为metaspace替代永久代），它采用永久代的方式来实现方法区，其他的虚拟机实现没有这一概念，而且HotSpot也有取消永久代的趋势，在JDK 1.7中HotSpot已经开始了“去永久化”，把原本放在永久代的字符串常量池移出。永久代主要存放常量、类信息、静态变量等数据，与垃圾回收关系不大，新生代和老年代是垃圾回收的主要区域。
 
 **永久代（Permanent Generationn）**：永久代存储类信息、常量、静态变量、即时编译器编译后的代码等数据，对这一区域而言，Java虚拟机规范指出可以不进行垃圾收集，一般而言不会进行垃圾回收。
 
 ![img](D:\Typora\img\aHR0cHM6Ly9pbWcyMDE4LmNuYmxvZ3MuY29tL2Jsb2cvOTU1MDkyLzIwMTkwMy85NTUwOTItMjAxOTAzMTMxNjU0Mjc1MjItMTI1MzY2MDMwNi5qcGc)
-
-
 
 
 
@@ -2954,12 +3051,6 @@ ava对引用的概念进行了扩充，将引用分为强引用（StrongReferenc
 
 
 
-
-
-
-
-
-
 ### 三、Android
 
 #### Activity
@@ -2991,8 +3082,6 @@ public void onConfigurationChanged(Configuration newConfig) {
 	super.onConfigurationChanged(newConfig); 
 } 
 ```
-
-
 
 Activity优先级的划分和下面的Activity的三种运行状态是对应的。 
 
@@ -3409,13 +3498,9 @@ public class mBroadcastReceiver extends BroadcastReceiver {
 
 即开发者自身定义intent的广播（最常用）
 
-
-
 **系统广播**（System Broadcast） ：
 
 Android中内置了多个系统广播：只要涉及到手机的基本操作（如开机、网络状态变化、拍照等等），都会发出相应的广播 ；当使用系统广播时，只需要在注册广播接收者时定义相关的action即可，并不需要手动发送广播，当系统有相关操作时会自动进行系统广播 
-
-
 
 **有序广播**（Ordered Broadcast） ：
 
@@ -3580,8 +3665,6 @@ public int update(Uri uri, ContentValues values, String selection, String[] sele
 // 外部应用 获取 ContentProvider 中的数据
 public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder)
 ```
-
-
 
 **总结**
 
@@ -3886,8 +3969,6 @@ private class MyTask extends AsyncTask<Params, Progress, Result> {
 
 ![img](D:\Typora\img\944365-b234918bcc41dd03.png)
 
-
-
 **使用**
 
 1. 创建HandlerThread的实例对象 
@@ -3896,8 +3977,6 @@ private class MyTask extends AsyncTask<Params, Progress, Result> {
 HandlerThread handlerThread = new HandlerThread("myHandlerThread"); 
 handlerThread.start();
 ```
-
-
 
 2.就是将线程的looper与Handler绑定在一 起
 
@@ -4072,8 +4151,6 @@ mMemoryCache = new LruCache<String, Bitmap>(cacheSize) {
 - **WindowManagerService (WMS)** ： 负责管理各 app 窗口的创建，更新，删除， 显示顺序。运行在 system_server 进程。
 
 - **ViewRootImpl** ：拥有 DecorView 的实例，通过该实例来控制 DecorView 绘制。ViewRootImpl 的一个内部类 W，实现了 IWindow 接口，IWindow 接口是供 WMS 使用的，WSM 通过调用 IWindow 一些方法，通过 Binder 通信的方式，最后执行到了 W 中对应的方法中。同样的，ViewRootImpl 通过 IWindowSession 来调用 WMS 的 Session 一些方法。Session 类继承自 `IWindowSession.Stub`，每一个应用进程都有一个唯一的 Session 对象与 WMS 通信。 
-
-
 
 **总结：**
 
@@ -5817,17 +5894,889 @@ OkHttp 的基本执行流程如下图所示：
 
 
 
+##### 建立连接
 
+OkHttp 中默认会添加 RetryAndFollowUpInterceptor、BridgeInterceptor、CacheInterceptor、ConnectInterceptor 以及 CallServerInterceptor 这几个拦截器。本文主要看一下 RetryAndFollupInterceptor 并引出建立连接相关的分析。
+
+**RetryAndFollowUpInterceptor：**
+
+Interceptor 最主要的代码都在 `intercept` 中，下面是 `RetryAndFollowUpInterceptor#intercept` 中的部分代码：
+
+```java
+@Override public Response intercept(Chain chain) throws IOException {
+    Request request = chain.request();
+
+    streamAllocation = new StreamAllocation(
+        client.connectionPool(), createAddress(request.url()), callStackTrace);//创建一个StreamAllocation对象
+
+    int followUpCount = 0;
+    Response priorResponse = null;
+    while (true) {
+      if (canceled) {
+        streamAllocation.release();  //调用release方法
+        throw new IOException("Canceled");
+      }
+    ...
+    //把StreamAllocation对象传给下一个 Interceptor
+    response = ((RealInterceptorChain) chain).proceed(request, streamAllocation, null, null); 
+    ...
+}
+```
+
+**StreamAlloction：**
+
+`StreamAllocation` 从名字上看是**流分配器**，其实它是统筹管理了几样东西。
+
+简单来说， `StreamAllocation` 协调了 3 样东西：
+
+- `Connections` ： 物理的 socket 连接
+- `Streams`：逻辑上的 HTTP request/response 对。每个 `Connection` 有个变量 `allocationLimit` ，用于定义可以承载的并发的 `streams` 的数量。HTTP/1.x 的 `Connection` 一次只能有一个 `stream`， HTTP/2 一般可以有多个。
+- `Calls` ： `Streams` 的序列。一个初始的 `request` 可能还会有后续的 `request`（如重定向）。OkHttp 倾向于让一个 `call` 所有的 `streams` 运行在同一个 `connection` 上。
+
+`StreamAllocation` 提供了一些 API 来释放以上的资源对象。 在 `RetryAndFollowUpInterceptor` 中创建的 `StreamAllocation` 对象下一个用到的地方是 ConnectInterceptor，其 `intercept` 代码如下：
+
+```java
+@Override public Response intercept(Chain chain) throws IOException {
+    RealInterceptorChain realChain = (RealInterceptorChain) chain;
+    Request request = realChain.request();
+    StreamAllocation streamAllocation = realChain.streamAllocation();
+
+    // We need the network to satisfy this request. Possibly for validating a conditional GET.
+    boolean doExtensiveHealthChecks = !request.method().equals("GET");
+    //Streams,逻辑上的 HTTP request/response 对。
+    HttpCodec httpCodec = streamAllocation.newStream(client, doExtensiveHealthChecks);
+    RealConnection connection = streamAllocation.connection();	//物理的 socket 连接
+
+    return realChain.proceed(request, streamAllocation, httpCodec, connection);
+}
+```
+
+
+
+**newStream：**
+
+`StreamAllocation` 中的 `newStream` 方法用于寻找新的 `RealConnection` 以及 `HttpCodec`，代码如下：
+
+```java
+public HttpCodec newStream(OkHttpClient client, boolean doExtensiveHealthChecks) {
+    int connectTimeout = client.connectTimeoutMillis();
+    int readTimeout = client.readTimeoutMillis();
+    int writeTimeout = client.writeTimeoutMillis();
+    boolean connectionRetryEnabled = client.retryOnConnectionFailure();
+
+    try {
+      //通过 findHealthyConnection 找到可用的 Connection ，并用这个 Connection 生成一个 HttpCodec 对象
+      RealConnection resultConnection = findHealthyConnection(connectTimeout, readTimeout,
+          writeTimeout, connectionRetryEnabled, doExtensiveHealthChecks);
+      HttpCodec resultCodec = resultConnection.newCodec(client, this);
+
+      synchronized (connectionPool) {
+        codec = resultCodec;
+        return resultCodec;
+      }
+    } catch (IOException e) {
+      throw new RouteException(e);
+    }
+  }
+```
+
+ `findHealthyConnection` 是找到一个健康的连接，代码如下：
+
+```java
+private RealConnection findHealthyConnection(int connectTimeout, int readTimeout,
+      int writeTimeout, boolean connectionRetryEnabled, boolean doExtensiveHealthChecks)
+      throws IOException {
+    while (true) {
+      RealConnection candidate = findConnection(connectTimeout, readTimeout, writeTimeout,
+          connectionRetryEnabled);
+
+      // If this is a brand new connection, we can skip the extensive health checks.
+      synchronized (connectionPool) {
+      // successCount == 0 表示还未使用过，则可以使用
+        if (candidate.successCount == 0) {
+          return candidate;
+        }
+      }
+
+      // Do a (potentially slow) check to confirm that the pooled connection is still good. If it
+      // isn't, take it out of the pool and start again.
+      if (!candidate.isHealthy(doExtensiveHealthChecks)) {
+        noNewStreams();
+        continue;
+      }
+
+      return candidate;
+    }
+ }
+
+public boolean isHealthy(boolean doExtensiveChecks) {
+    if (socket.isClosed() || socket.isInputShutdown() || socket.isOutputShutdown()) {
+      return false;
+    }
+    ... // 省略 Http2 代码
+    return true;
+  }
+
+```
+
+在一个无限循环中，通过 `findConnection` 寻找一个 `connection`，并判断是否可用，首先如果没有使用过的肯定是健康的可直接返回，否则调用 `isHealthy`，主要就是判断 `socket` 是否关闭。这里的 `socket` 是在 `findConnection` 中赋值的，再看看 `findConnection` 的代码：
+
+```java
+private RealConnection findConnection(int connectTimeout, int readTimeout, int writeTimeout,
+      boolean connectionRetryEnabled) throws IOException {
+    Route selectedRoute;
+    synchronized (connectionPool) {
+      if (released) throw new IllegalStateException("released");
+      if (codec != null) throw new IllegalStateException("codec != null");
+      if (canceled) throw new IOException("Canceled");
+
+      // Attempt to use an already-allocated connection.
+      RealConnection allocatedConnection = this.connection;
+      if (allocatedConnection != null && !allocatedConnection.noNewStreams) {
+        return allocatedConnection;
+      }
+
+      // Attempt to get a connection from the pool.
+      // 1. 从 ConnectionPool 取得 connection
+      Internal.instance.get(connectionPool, address, this, null);
+      if (connection != null) {
+        return connection;
+      }
+
+      selectedRoute = route;
+    }
+
+    // If we need a route, make one. This is a blocking operation.
+    if (selectedRoute == null) {
+      selectedRoute = routeSelector.next();
+    }
+
+    RealConnection result;
+    synchronized (connectionPool) {
+      if (canceled) throw new IOException("Canceled");
+
+      // Now that we have an IP address, make another attempt at getting a connection from the pool.
+      // 2. 有了 ip 地址后再从 connectionpool中取一次
+      // This could match due to connection coalescing.
+      Internal.instance.get(connectionPool, address, this, selectedRoute);
+      if (connection != null) return connection;
+
+      // Create a connection and assign it to this allocation immediately. This makes it possible
+      // for an asynchronous cancel() to interrupt the handshake we're about to do.
+      route = selectedRoute;
+      refusedStreamCount = 0;
+      // 3. ConnectionPool 中没有，新创建一个
+      result = new RealConnection(connectionPool, selectedRoute);
+      // 3. 将 StreamAllocation 加入到 `RealConnection` 中的一个队列中
+      acquire(result);
+    }
+
+    // Do TCP + TLS handshakes. This is a blocking operation.
+    // 4. 建立连接，在其中创建 socket
+    result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
+    routeDatabase().connected(result.route());
+
+    Socket socket = null;
+    synchronized (connectionPool) {
+      // Pool the connection.
+      // 5. 将新创建的 connection 放到 ConnectionPool 中 
+      Internal.instance.put(connectionPool, result);
+
+      // If another multiplexed connection to the same address was created concurrently, then
+      // release this connection and acquire that one.
+      if (result.isMultiplexed()) {
+        socket = Internal.instance.deduplicate(connectionPool, address, this);
+        result = connection;
+      }
+    }
+    closeQuietly(socket);
+
+    return result;
+  }
+```
+
+上面 `Connection` 的创建大体是以下几个步骤：
+
+1. 调用 `Intenal.get` 方法从 `ConnectionPool` 中获取一个 `Connection`，主要根据 url 的 host 判断，相关代码在 `ConnectionPool` 中。
+2. 如果没有并且又获取了 IP 地址，则再获取一次。
+3. 如果 `ConnectionPool` 中没有， 则新创建一个 `RealConnection`，并调用 `acquire` 将 `StreamAllocation` 中加入 `RealConnection` 中的一个队列中。
+4. 调用 `RealConnection#connect` 方法建立连接，在内部会创建 `Socket`。
+5. 将新创建的 `Connection` 加入到 `ConnectionPool` 中。
+
+获取到了 `Connection` 之后，再创建一个 `HttpCodec` 对象。
+
+```java
+public HttpCodec newCodec(
+      OkHttpClient client, StreamAllocation streamAllocation) throws SocketException {
+    if (http2Connection != null) {
+      return new Http2Codec(client, streamAllocation, http2Connection);
+    } else {
+      socket.setSoTimeout(client.readTimeoutMillis());
+      source.timeout().timeout(client.readTimeoutMillis(), MILLISECONDS);
+      sink.timeout().timeout(client.writeTimeoutMillis(), MILLISECONDS);
+      return new Http1Codec(client, streamAllocation, source, sink);
+    }
+}
+```
+
+根据是 Http1 还是 Http2 创建对应的 `HttpCodec`， 其中的 `socket` 是在 `RealConnection` 中的 `connect` 方法创建的。
+
+**RealConnection：**
+
+`RealConnection` 封装的是底层的 `Socket` 连接，内部必然有一个 `Socket` 对象，下面是 `RealConnection` 内部的变量：
+
+```java
+public final class RealConnection extends Http2Connection.Listener implements Connection {
+  private static final String NPE_THROW_WITH_NULL = "throw with null exception";
+  private final ConnectionPool connectionPool;
+  //Route 表示的是与服务端建立的路径，其实内部封装了 Address，Address 则是封装了请求的 URL。
+  private final Route route;
+
+  //rawSocket 对象代表底层的连接，还有一个 socket 是用于 Https， 对于普通的 Http 请求来说，这两个对象是一样的。 
+  private Socket rawSocket;
+
+  private Socket socket;
+  private Handshake handshake;
+  private Protocol protocol;
+  private Http2Connection http2Connection;
+  //source 和 sink 则是利用 Okio 封装 socket 得到的输入输出流。
+  private BufferedSource source;
+  private BufferedSink sink;
+
+  //noNewStream 对象用于标识这个 Connection 不能再用于 Http 请求了，一旦设置为 true, 则不会再变。
+  public boolean noNewStreams;
+
+  public int successCount;
+
+  //allocationLimit 指的是这个 Connection 最多能同时承载几个 Http 流，对于 Http/1 来说只能是一个。
+  public int allocationLimit = 1;
+
+  //allocations 是一个 List 对象，里面保存着正在使用这个 Connection 的 StreamAllocation 的弱引用，当StreamAllocation 调用 acquire 时，便会将其弱引用加入这个 List，调用 release 则是移除引用。allocations 为空说明此 Connection 为闲置， ConnectionPool 利用这些信息来决定是否关闭这个连接。
+  public final List<Reference<StreamAllocation>> allocations = new ArrayList<>();
+
+  /** Nanotime timestamp when {@code allocations.size()} reached zero. */
+  public long idleAtNanos = Long.MAX_VALUE;
+  ...
+}
+```
+
+**connect**
+
+`RealConnection` 用于建立连接，里面有相应的 `connect` 方法：
+
+```java
+public void connect(
+      int connectTimeout, int readTimeout, int writeTimeout, boolean connectionRetryEnabled) {
+    ...
+    while (true) {
+      try {
+        if (route.requiresTunnel()) {
+          connectTunnel(connectTimeout, readTimeout, writeTimeout);
+        } else {
+          // 创建socket，建立连接
+          connectSocket(connectTimeout, readTimeout);
+        }
+        // 建立
+        establishProtocol(connectionSpecSelector);
+        break;
+      }
+    ...
+}
+
+private void connectSocket(int connectTimeout, int readTimeout) throws IOException {
+    Proxy proxy = route.proxy();
+    Address address = route.address();
+    // 创建 socket
+    rawSocket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP
+        ? address.socketFactory().createSocket()
+        : new Socket(proxy);
+
+    rawSocket.setSoTimeout(readTimeout);
+    try {
+      // 建立连接，相当于调用 socket 的 connect 方法
+      Platform.get().connectSocket(rawSocket, route.socketAddress(), connectTimeout);
+    } catch (ConnectException e) {
+      ConnectException ce = new ConnectException("Failed to connect to " + route.socketAddress());
+      ce.initCause(e);
+      throw ce;
+    }
+    
+    try {
+      // 获取输入输出流
+      source = Okio.buffer(Okio.source(rawSocket));
+      sink = Okio.buffer(Okio.sink(rawSocket));
+    } catch (NullPointerException npe) {
+      if (NPE_THROW_WITH_NULL.equals(npe.getMessage())) {
+        throw new IOException(npe);
+      }
+    }
+}
+```
+
+如果不是 Https, 则调用 `connectSocket`，在内部创建 `rawSocket` 对象，设置超时时间。紧接着 `Platform.get().connectSocket` 根据不同的平台调用相应的 `connect` 方法，这样 `rawSocket` 就连接到服务端了。然后是用 `Okio` 封装 `rawSocket` 的输入输出流，这里的输入输出流最终是交给 `HttpCodec` 进行 Http 报文的写入都读取。通过以上步骤，就实现了 Http 请求的连接。
+
+
+
+**总结：**
+
+本文从 `RetryAndFollowupIntercept` 中创建 `StreamAllocation` 对象，到 `Connection` 中创建 `RealConnection` 和 `HttpCodec`，分析了 OkHttp 建立连接的基本过程。可以看出， OkHttp 中的连接由`RealConnection` 封装，Http 流的输入输出由 `HttpCodec` 操作，而 `StreamAllocation` 则统筹管理这些资源。在连接的寻找与创建过程，有个关键的东西是 `ConnectionPool`， 即连接池。它负责管理所有的 `Connection`，OkHttp 利用这个连接池进行 `Connection` 的重用以提高网络请求的效率
+
+
+
+##### 连接池
+
+前面分析了 OkHttp 建立连接的过程，主要涉及到的几个类包括 `StreamAllocation`、`RealConnection` 以及 `HttpCodec`，其中 `RealConnection` 封装了底层的 Socket。Socket 建立了 TCP 连接，这是需要消耗时间和资源的，而 OkHttp 则使用连接池来管理这里连接，进行连接的重用，提高请求的效率。OkHttp 中的连接池由 `ConnectionPool` 实现，本文主要是对这个类进行分析。
+
+在 `StreamAllocation` 的 `findConnection` 方法中，有这样一段代码：
+
+```java
+// Attempt to get a connection from the pool.
+Internal.instance.get(connectionPool, address, this, null);
+    if (connection != null) {
+        return connection;
+}
+```
+
+`Internal.instance.get` 最终是从 `ConnectionPool` 取得一个`RealConnection`， 如果有了则直接返回。下面是 `ConnectionPool` 中的代码：
+
+```java
+@Nullable 
+RealConnection get(Address address, StreamAllocation streamAllocation, Route route) {
+    assert (Thread.holdsLock(this));
+    //connections 是 ConnectionPool 中的一个双端队列（ArrayDeque）
+    for (RealConnection connection : connections) {
+      if (connection.isEligible(address, route)) {
+        streamAllocation.acquire(connection);
+        return connection;
+      }
+    }
+    return null;
+}
+```
+
+从队列中取出一个 `Connection` 之后，判断其是否能满足重用的要求：
+
+```java
+public boolean isEligible(Address address, @Nullable Route route) {
+    // 如果这个 Connection 已经分配的数量超过了分配限制或者被标记为不能再分配，则直接返回 false
+    if (allocations.size() >= allocationLimit || noNewStreams) return false;
+
+    // 判断 Address 中除了 host 以外的变量是否相同，如果有不同的，那么这个连接也不能重用
+    if (!Internal.instance.equalsNonHost(this.route.address(), address)) return false;
+
+    // 判断 host 是否相同，如果相同那么对于当前的 Address 来说， 这个 Connection 便是可重用的
+    if (address.url().host().equals(this.route().address().url().host())) {
+      return true; // This connection is a perfect match.
+    }
+   // 省略 http2 相关代码
+   ...
+}
+
+boolean equalsNonHost(Address that) {
+    return this.dns.equals(that.dns)
+        && this.proxyAuthenticator.equals(that.proxyAuthenticator)
+        && this.protocols.equals(that.protocols)
+        && this.connectionSpecs.equals(that.connectionSpecs)
+        && this.proxySelector.equals(that.proxySelector)
+        && equal(this.proxy, that.proxy)
+        && equal(this.sslSocketFactory, that.sslSocketFactory)
+        && equal(this.hostnameVerifier, that.hostnameVerifier)
+        && equal(this.certificatePinner, that.certificatePinner)
+        && this.url().port() == that.url().port();
+}
+```
+
+从上面的代码看来，`get` 逻辑还是比较简单明了的。
+
+接下来看一下 `put`，在 `StreamAllocation` 的 `findConnection` 方法中，如果新创建了 `Connection`，则将其放到连接池中。
+
+```java
+Internal.instance.put(connectionPool, result);
+```
+
+最终调用的是 `ConnectionPool#put`：
+
+```java
+void put(RealConnection connection) {
+    assert (Thread.holdsLock(this));
+    if (!cleanupRunning) {
+      cleanupRunning = true;
+      executor.execute(cleanupRunnable);
+    }
+    connections.add(connection);
+}
+```
+
+首先判断其否启动了清理线程，如果没有则将 `cleanupRunnable` 放到线程池中。最后是将 `RealConnection` 放到队列中。
+
+**cleanup：**
+
+线程池需要对闲置的或者超时的连接进行清理，`CleanupRunnable` 就是做这件事的：
+
+```java
+private final Runnable cleanupRunnable = new Runnable() {
+    @Override public void run() {
+      while (true) {
+        long waitNanos = cleanup(System.nanoTime());
+        if (waitNanos == -1) return;
+        if (waitNanos > 0) {
+          long waitMillis = waitNanos / 1000000L;
+          waitNanos -= (waitMillis * 1000000L);
+          synchronized (ConnectionPool.this) {
+            try {
+              ConnectionPool.this.wait(waitMillis, (int) waitNanos);
+            } catch (InterruptedException ignored) {
+            }
+          }
+        }
+      }
+    }
+};
+```
+
+`run` 里面有个无限循环，调用 `cleanup` 之后，得到一个时间 `waitNano`，如果不为 -1 则表示线程的睡眠时间，接下来调用 `wait` 进入睡眠。如果是 -1，则表示当前没有需要清理的连接，直接返回即可。
+
+清理的主要实现在 `cleanup` 方法中，下面是其代码：
+
+```java
+long cleanup(long now) {
+    int inUseConnectionCount = 0;
+    int idleConnectionCount = 0;
+    RealConnection longestIdleConnection = null;
+    long longestIdleDurationNs = Long.MIN_VALUE;
+
+    // Find either a connection to evict, or the time that the next eviction is due.
+    synchronized (this) {
+      for (Iterator<RealConnection> i = connections.iterator(); i.hasNext(); ) {
+        RealConnection connection = i.next();
+
+        // 1. 判断是否是空闲连接
+        if (pruneAndGetAllocationCount(connection, now) > 0) {
+          inUseConnectionCount++;
+          continue;
+        }
+
+        idleConnectionCount++;
+
+        // 2. 判断是否是最长空闲时间的连接
+        long idleDurationNs = now - connection.idleAtNanos;
+        if (idleDurationNs > longestIdleDurationNs) {
+          longestIdleDurationNs = idleDurationNs;
+          longestIdleConnection = connection;
+        }
+      }
+      //  3. 如果最长空闲的时间超过了设定的最大值，或者空闲链接数量超过了最大数量，则进行清理，否则计算下一次需要清理的等待时间
+      if (longestIdleDurationNs >= this.keepAliveDurationNs
+          || idleConnectionCount > this.maxIdleConnections) {
+        // We've found a connection to evict. Remove it from the list, then close it below (outside
+        // of the synchronized block).
+        connections.remove(longestIdleConnection);
+      } else if (idleConnectionCount > 0) {
+        // A connection will be ready to evict soon.
+        return keepAliveDurationNs - longestIdleDurationNs;
+      } else if (inUseConnectionCount > 0) {
+        // All connections are in use. It'll be at least the keep alive duration 'til we run again.
+        return keepAliveDurationNs;
+      } else {
+        // No connections, idle or in use.
+        cleanupRunning = false;
+        return -1;
+      }
+    }
+     // 3. 关闭连接的socket
+    closeQuietly(longestIdleConnection.socket());
+
+    // Cleanup again immediately.
+    return 0;
+}
+```
+
+清理的逻辑大致是以下几步：
+
+1. 遍历所有的连接，对每个连接调用 `pruneAndGetAllocationCount` 判断其是否闲置的连接。如果是正在使用中，则直接遍历一下个。
+2. 对于闲置的连接，判断是否是当前空闲时间最长的。
+3. 对于当前空闲时间最长的连接，如果其超过了设定的最长空闲时间（5分钟）或者是最大的空闲连接的数量（5个），则清理此连接。否则计算下次需要清理的时间，这样 `cleanupRunnable` 中的循环变会睡眠相应的时间，醒来后继续清理。
+
+`pruneAndGetAllocationCount` 用于清理可能泄露的 `StreamAllocation` 并返回正在使用此连接的 `StreamAllocation` 的数量，代码如下：
+
+```java
+private int pruneAndGetAllocationCount(RealConnection connection, long now) {
+    List<Reference<StreamAllocation>> references = connection.allocations;
+    for (int i = 0; i < references.size(); ) {
+      Reference<StreamAllocation> reference = references.get(i);
+
+      if (reference.get() != null) {
+        i++;
+        continue;
+      }
+
+      // We've discovered a leaked allocation. This is an application bug.
+      // 如果 StreamAlloction 引用被回收，但是 connection 的引用列表中扔持有，那么可能发生了内存泄露
+      StreamAllocation.StreamAllocationReference streamAllocRef =
+          (StreamAllocation.StreamAllocationReference) reference;
+      String message = "A connection to " + connection.route().address().url()
+          + " was leaked. Did you forget to close a response body?";
+      Platform.get().logCloseableLeak(message, streamAllocRef.callStackTrace);
+
+      references.remove(i);
+      connection.noNewStreams = true;
+
+      // If this was the last allocation, the connection is eligible for immediate eviction.
+      if (references.isEmpty()) {
+        connection.idleAtNanos = now - keepAliveDurationNs;
+        return 0;
+      }
+    }
+
+    return references.size();
+}
+```
+
+如果 `StreamAllocation` 已经被回收，说明应用层的代码已经不需要这个连接，但是 `Connection` 仍持有 `StreamAllocation` 的引用，则表示`StreamAllocation` 中 `release(RealConnection connection)` 方法未被调用，可能是读取 `ResponseBody` 没有关闭 I/O 导致的。
+
+
+
+**总结：**
+
+OkHttp 中的连接池主要就是保存一个正在使用的连接的队列，对于满足条件的同一个 host 的多个连接复用同一个 `RealConnection`，提高请求效率。此外，还会启动线程对闲置超时或者超出闲置数量的 `RealConnection` 进行清理。
+
+@[**然则**](https://segmentfault.com/u/ming_55e57cb682df4)
+
+博文地址：https://segmentfault.com/a/1190000012656606
 
 
 
 #### Retrofit解析
 
+Retrofit 是 Square 推出的 HTTP 框架，主要用于 Android 和 Java。Retrofit 将网络请求变成方法的调用，使用起来非常简洁方便。
+
+- App应用程序通过Retrofit请求网络，实际上是使用Retrofit接口层封装请求参数，之后由OkHttp完成后续的请求操作。
+- 在服务端返回数据之后，OkHttp将原始的结果交给Retrofit，Retrofit根据用户的需求对结果进行解析。
+- 完成数据的转化(converterFactory)，适配(callAdapterFactory)，通过设计模式进行各种扩展。
+
+**基本用法：**
+
+```java
+public interface GitHubService {
+  @GET("users/{user}/repos")
+  Call<List<Repo>> listRepos(@Path("user") String user);
+}
+```
+
+在 `GithubService` 接口中有一个方法 `listRepos`，这个方法用了 `@GET` 的方式注解，这表明这是一个 `GET` 请求。在后面的括号中的 `users/{user}/repos` 是请求的路径，其中的 `{user}` 表示的是这一部分是动态变化的，它的值由方法的参数传递过来，而这个方法的参数`@Path("user") String user` 即是用于替换 `{user}` 。另外注意这个方法的返回值是 `Call<List<Repo>>`。可以看出 Retrofit 用注解的方式来描述一个网络请求相关的参数。
+
+发出这个网络请求：
+
+```java
+Retrofit retrofit = new Retrofit.Builder()
+.baseUrl("https://api.github.com/")
+.addConverterFactory(GsonConverterFactory.create())
+.build();
+
+GitHubService service = retrofit.create(GitHubService.class);
+Call<List<Repo>> repos = service.listRepos("octocat");
+repos.enqueue(new Callback<List<Repo>>() {
+    @Override
+    public void onResponse(Call<List<Repo>> call, Response<List<Repo>> response) {
+            
+    }
+    @Override
+    public void onFailure(Call<List<Repo>> call, Throwable t) {
+
+    }
+ });
+```
+
+先是构建了一个 Retrofit 对象，其中传入了 `baseUrl` 参数，`baseUrl` 和上面的 `GET` 方法后面的路径组合起来才是一个完整的 url。除了 `baseUrl`，还有一个 `converterFactory`，它是用于把返回的 http response 转换成 Java 对象，对应方法的返回值 `Call<List<Repo>>` 中的 `List<Repo>>`，其中 `Repo` 是自定义的类。有了Retrofit 对象，接着调用它的 `create` 方法创建了 `GitHubService` 的实例，然后就可以调用这个实例的方法来请求网络了。调用 `listRepo` 方法得到一个 `Call`对象，然后可以使用 `enqueue` 或者 `execute` 来执行发起请求，`enqueue` 是异步执行，而 `execute` 是同步执行。
 
 
 
+**源码分析：**
+
+**Retrofit 的创建**
+
+从 Retrofit 的创建方法可以看出，使用的是 Builder 模式。Retrofit 中有如下的几个关键变量：
+
+```java
+  //用于缓存解析出来的方法
+  private final Map<Method, ServiceMethod> serviceMethodCache = new LinkedHashMap<>();
+  
+  //请求网络的OKHttp的工厂，默认是 OkHttpClient
+  private final okhttp3.Call.Factory callFactory;
+  
+  //baseurl
+  private final HttpUrl baseUrl;
+  
+  //请求网络得到的response的转换器的集合 默认会加入 BuiltInConverters     
+  private final List<Converter.Factory> converterFactories;
+  
+  //把Call对象转换成其它类型
+  private final List<CallAdapter.Factory> adapterFactories;
+  
+  //用于执行回调 Android中默认是 MainThreadExecutor
+  private final Executor callbackExecutor;
+  
+  //是否需要立即解析接口中的方法
+  private final boolean validateEagerly;
+  
+```
+
+再看一下Retrofit 中的内部类 Builder 的 `build` 方法：
+
+```java
+public Retrofit build() {
+  if (baseUrl == null) {
+    throw new IllegalStateException("Base URL required.");
+  }
+
+  okhttp3.Call.Factory callFactory = this.callFactory;
+  if (callFactory == null) {
+    //默认创建一个 OkHttpClient
+    callFactory = new OkHttpClient();
+  }
+
+  Executor callbackExecutor = this.callbackExecutor;
+  if (callbackExecutor == null) {
+     //Android 中返回的是 MainThreadExecutor
+    callbackExecutor = platform.defaultCallbackExecutor();
+  }
+
+  // Make a defensive copy of the adapters and add the default Call adapter.
+  List<CallAdapter.Factory> adapterFactories = new ArrayList<>(this.adapterFactories);
+  adapterFactories.add(platform.defaultCallAdapterFactory(callbackExecutor));
+
+  // Make a defensive copy of the converters.
+  List<Converter.Factory> converterFactories = new ArrayList<>(this.converterFactories);
+
+  return new Retrofit(callFactory, baseUrl, converterFactories, adapterFactories,
+      callbackExecutor, validateEagerly);
+}
+```
+
+在创建 Retrofit 的时候，如果没有指定 OkHttpClient，会创建一个默认的。如果没有指定 `callbackExecutor`，会返回平台默认的，在 Android 中是 `MainThreadExecutor`，并利用这个构建一个 `CallAdapter`加入 `adapterFactories`。
 
 
 
-#### EventBus解析
+**create 方法**
+
+有了 Retrofit 对象后，便可以通过 `create` 方法创建网络请求接口类的实例，代码如下：
+
+```java
+public <T> T create(final Class<T> service) {
+Utils.validateServiceInterface(service);
+if (validateEagerly) {
+  //提前解析方法
+  eagerlyValidateMethods(service);
+}
+return (T) Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] { service },
+    new InvocationHandler() {
+      private final Platform platform = Platform.get();
+
+      @Override public Object invoke(Object proxy, Method method, Object... args)
+          throws Throwable {
+        // If the method is a method from Object then defer to normal invocation.如果是Object中的方法，直接调用
+        if (method.getDeclaringClass() == Object.class) {
+          return method.invoke(this, args);
+        }
+        //为了兼容 Java8 平台，Android 中不会执行
+        if (platform.isDefaultMethod(method)) {
+          return platform.invokeDefaultMethod(method, service, proxy, args);
+        }
+        //下面是重点，解析方法
+        ServiceMethod serviceMethod = loadServiceMethod(method);
+        OkHttpCall okHttpCall = new OkHttpCall<>(serviceMethod, args);
+        return serviceMethod.callAdapter.adapt(okHttpCall);
+      }
+});
+```
+
+`reate` 方法接受一个 Class 对象，也就是我们编写的接口，里面含有通过注解标识的请求网络的方法。注意 `return` 语句部分，这里调用了 `Proxy.newProxyInstance` 方法，这个很重要，因为用了**动态代理模式**。
+
+简单的描述就是，`Proxy.newProxyInstance` 根据传进来的 Class 对象生成了一个实例 A，也就是代理类。每当这个代理类 A 执行某个方法时，总是会调用 `InvocationHandler`(`Proxy.newProxyInstance` 中的第三个参数) 的 `invoke` 方法，在这个方法中可以执行一些操作(这里是解析方法的注解参数等)，通过这个方法真正的执行我们编写的接口中的网络请求。
+
+**方法解析和类型转换**
+
+下面具体看一下在 `invoke` 中解析网络请求方法的几行。首先是 `ServiceMethod serviceMethod = loadServiceMethod(method);`，其中 `loadServiceMethod` 代码如下：
+
+```java
+ServiceMethod loadServiceMethod(Method method) {
+    ServiceMethod result;
+    synchronized (serviceMethodCache) {
+      result = serviceMethodCache.get(method);
+      if (result == null) {
+        result = new ServiceMethod.Builder(this, method).build();
+        serviceMethodCache.put(method, result);
+      }
+    }
+    return result;
+}
+```
+
+这里是先到缓存中找，缓存中没有再去创建。这里创建了 `ServiceMethod` 对象。`ServiceMethod` 用于把接口方法的调用转换成一个 HTTP 请求。其实，在 `ServiceMethod` 中会解析接口中方法的注解、参数等，它还有个 `toRequest` 方法，用于生成一个 `Request` 对象。这个 `Request` 对象就是 OkHttp 中的 `Request`，代表了一条网络请求(Retrofit 实际上把真正请求网络的操作交给了 OkHttp 执行)。下面是创建 `ServiceMethod` 的部分代码：
+
+```java
+public ServiceMethod build() {
+  //获取 callAdapter
+  callAdapter = createCallAdapter();
+  responseType = callAdapter.responseType();
+  if (responseType == Response.class || responseType == okhttp3.Response.class) {
+    throw methodError("'"
+        + Utils.getRawType(responseType).getName()
+        + "' is not a valid response body type. Did you mean ResponseBody?");
+  }
+  //获取 responseConverter 
+  responseConverter = createResponseConverter();
+
+  for (Annotation annotation : methodAnnotations) {
+    //解析注解
+    parseMethodAnnotation(annotation);
+    //省略了一些代码
+    ...
+  }
+}
+```
+
+在得到 `ServiceMethod` 对象后，把它连同方法调用的相关参数传给了 `OkHttpCall` 对象，也就是这行代码： `OkHttpCall okHttpCall = new OkHttpCall<>(serviceMethod, args);`。 
+
+下面介绍 `OkHttpCall`，`OkHttpCall`继承于 `Call` 接口。`Call` 是Retrofit 的基础接口，代表发送网络请求与响应调用，`OkHttpCall` 是 `Call` 的一个实现类，它里面封装了 `OkHttp` 中的原生 `Call`，在这个类里面实现了 `execute` 以及 `enqueue` 等方法，其实是调用了 OkHttp 中原生 `Call` 的对应方法。
+
+接下来把 `OkHttpCall` 传给 `serviceMethod.callAdapter` 对象，这里的callAdapter又是什么？在上面创建 `ServiceMethod` 的代码中有一行代码： `callAdapter = createCallAdapter()`，这里创建了 `calladapter`，在这个代码内部是根据方法的返回类型以及注解去寻找对应的 `CallAdapter`，去哪里寻找？去 `Retrofit` 对象的 `adapterFactories` 集合中找。当我们创建 `Retrofit` 的时候，可以调用 `addCallAdapter` 向 `adapterFactories` 中添加 `CallAdapter`。在前面的基本用法里面，我们并没有添加任何 `CallAdapter`，但 `adapterFactories` 中默认会添加一个 `ExecutorCallAdapterFactory`，调用其 `get` 方法便可获得 `CallAdapter` 对象。
+
+那么 `CallAdapter` 是干嘛的呢？上面调用了`adapt` 方法，它是为了把一个 `Call` 转换成另一种类型，比如当 Retrofit 和 RxJava 结合使用的时候，接口中方法可以返回 `Observable<T>`，这里相当于**适配器模式**。默认情况下得到的是一个 `Call` 对象，它是`ExecutorCallbackCall`，代码如下：
+
+```java
+public CallAdapter<Call<?>> get(Type returnType, Annotation[] annotations, Retrofit retrofit) {
+if (getRawType(returnType) != Call.class) {
+  return null;
+}
+final Type responseType = Utils.getCallResponseType(returnType);
+return new CallAdapter<Call<?>>() {
+  @Override public Type responseType() {
+    return responseType;
+  }
+
+  @Override public <R> Call<R> adapt(Call<R> call) {
+    return new ExecutorCallbackCall<>(callbackExecutor, call);
+  }
+};
+```
+
+个 `ExecutorCallbackCall` 接受一个 `callbackExecutor`(Android 中默认为 `MainThreadExecutor`，把返回的数据传回主线程) 和一个 `call`，也就是 `OkhttpCall`。看下 `ExecutorCallbackCall` 部分代码：
+
+```java
+static final class ExecutorCallbackCall<T> implements Call<T> {
+final Executor callbackExecutor;
+final Call<T> delegate;
+
+ExecutorCallbackCall(Executor callbackExecutor, Call<T> delegate) {
+  this.callbackExecutor = callbackExecutor;
+  this.delegate = delegate;
+}
+
+@Override public void enqueue(final Callback<T> callback) {
+  if (callback == null) throw new NullPointerException("callback == null");
+
+  delegate.enqueue(new Callback<T>() {
+    @Override public void onResponse(Call<T> call, final Response<T> response) {
+      callbackExecutor.execute(new Runnable() {
+        @Override public void run() {
+          if (delegate.isCanceled()) {
+            // Emulate OkHttp's behavior of throwing/delivering an IOException on cancellation.
+            callback.onFailure(ExecutorCallbackCall.this, new IOException("Canceled"));
+          } else {
+            callback.onResponse(ExecutorCallbackCall.this, response);
+          }
+        }
+      });
+    }
+
+    @Override public void onFailure(Call<T> call, final Throwable t) {
+      callbackExecutor.execute(new Runnable() {
+        @Override public void run() {
+          callback.onFailure(ExecutorCallbackCall.this, t);
+        }
+      });
+    }
+  });
+}
+```
+
+在 `enqueue` 方法中，调用了 `OkHttpCall` 的 `enqueue`，所以这里相当于**静态的代理模式**。`OkHttpCall` 中的 `enqueue` 其实又调用了原生的 `OkHttp` 中的 `enqueue`，这里才真正发出了网络请求，部分代码如下:
+
+```java
+@Override public void enqueue(final Callback<T> callback) {
+    if (callback == null) throw new NullPointerException("callback == null");
+    //真正请求网络的 call
+    okhttp3.Call call;
+    Throwable failure;
+
+    synchronized (this) {
+      if (executed) throw new IllegalStateException("Already executed.");
+      executed = true;
+      //省略了部分发代码
+      ...
+      call = rawCall;
+      //enqueue 异步执行
+    call.enqueue(new okhttp3.Callback() {
+      @Override public void onResponse(okhttp3.Call call, okhttp3.Response rawResponse)
+          throws IOException {
+        Response<T> response;
+        try {
+        //解析数据 会用到 conveterFactory，把 response 转换为对应 Java 类型
+          response = parseResponse(rawResponse);
+        } catch (Throwable e) {
+          callFailure(e);
+          return;
+        }
+        callSuccess(response);
+      }
+
+      @Override public void onFailure(okhttp3.Call call, IOException e) {
+        try {
+          callback.onFailure(OkHttpCall.this, e);
+        } catch (Throwable t) {
+          t.printStackTrace();
+        }
+      }
+
+  private void callFailure(Throwable e) {
+    try {
+      callback.onFailure(OkHttpCall.this, e);
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+  }
+
+  private void callSuccess(Response<T> response) {
+    try {
+      callback.onResponse(OkHttpCall.this, response);
+    } catch (Throwable t) {
+      t.printStackTrace();
+    }
+  }
+ });
+}
+```
+
+OkHttp 获取数据后，解析数据并回调 callback 响应的方法，一次网络请求便完成了。
+
+**总结:**
+
+Retrofit 整个框架的代码不算太多，还是比较易读的。主要就是通过动态代理的方式把 Java 接口中的解析为响应的网络请求，然后交给 OkHttp 去执行。并且可以适配不同的 `CallAdapter`，可以方便地与 RxJava 结合使用。
+
+
+
+#### EventBus介绍
+
+EventBus是一个Android端优化的publish/subscribe消息总线，简化了应用程序内 各组件间、组件与后台线程间的通信。
+
+ EventBus可以代替Android传统的Intent,Handler,Broadcast或接口函数,在Fragment,Activity,Service线程之间传递数据，执行方法。
+
+用于线程间的通讯代替handler或用于组件间的通讯代替Intent
+
+
+
+#### RxJava介绍
+
+RxJava本质上是一个异步操作库，是一个能让你用极其简洁的逻辑去处理繁琐复杂任务的异步事件库。
 
